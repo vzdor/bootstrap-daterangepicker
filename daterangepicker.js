@@ -20,20 +20,6 @@
         var DRPTemplate = '<div class="daterangepicker dropdown-menu">' +
                 '<div class="calendar left"></div>' +
                 '<div class="calendar right"></div>' +
-                '<div class="ranges">' +
-                  '<div class="range_inputs">' +
-                    '<div class="daterangepicker_start_input">' +
-                      '<label for="daterangepicker_start"></label>' +
-                      '<input class="input-mini" type="text" name="daterangepicker_start" value="" disabled="disabled" />' +
-                    '</div>' +
-                    '<div class="daterangepicker_end_input">' +
-                      '<label for="daterangepicker_end"></label>' +
-                      '<input class="input-mini" type="text" name="daterangepicker_end" value="" disabled="disabled" />' +
-                    '</div>' +
-                    '<button class="applyBtn" disabled="disabled"></button>&nbsp;' +
-                    '<button class="cancelBtn"></button>' +
-                  '</div>' +
-                '</div>' +
               '</div>';
 
         //custom options
@@ -424,7 +410,7 @@
             var dateString = this.element.val().split(this.separator),
                 start = null,
                 end = null;
-            
+
             if(dateString.length === 2) {
                 start = moment(dateString[0], this.format);
                 end = moment(dateString[1], this.format);
@@ -434,7 +420,7 @@
                 start = moment(this.element.val(), this.format);
                 end = start;
             }
-            
+
             if (end.isBefore(start)) return;
 
             this.oldStartDate = this.startDate.clone();
@@ -537,11 +523,12 @@
             this.element.removeClass('active');
             this.container.hide();
 
-            if (!this.startDate.isSame(this.oldStartDate) || !this.endDate.isSame(this.oldEndDate))
-                this.notify();
 
-            this.oldStartDate = this.startDate.clone();
-            this.oldEndDate = this.endDate.clone();
+            // if (!this.startDate.isSame(this.oldStartDate) || !this.endDate.isSame(this.oldEndDate))
+            //     this.notify();
+
+            // this.oldStartDate = this.startDate.clone();
+            // this.oldEndDate = this.endDate.clone();
 
             this.element.trigger('hide.daterangepicker', this);
         },
@@ -693,8 +680,20 @@
             if (!this.timePicker)
                 endDate.endOf('day');
 
+            this.dateSelected();
+
             if (this.singleDatePicker)
                 this.clickApply();
+        },
+
+        dateSelected: function() {
+            if (!this.startDate.isSame(this.oldStartDate) || !this.endDate.isSame(this.oldEndDate)) {
+                this.notify();
+                this.oldStartDate = this.startDate.clone();
+                this.oldEndDate = this.endDate.clone();
+                this.updateInputText();
+                // this.element.trigger('apply.daterangepicker', this);
+            }
         },
 
         clickApply: function (e) {
