@@ -14,9 +14,10 @@
         this.element = $(element);
 
         // create the picker HTML object
-        var template =
-                '<div class="calendar left"></div>' +
-                '<div class="calendar right"></div>';
+        var template = '<div class="daterangepicker dropdown-menu">' +
+            '<div class="calendar left"></div>' +
+            '<div class="calendar right"></div>' +
+            '</div>';
 
         // custom options
         if (typeof options !== 'object' || options === null)
@@ -28,14 +29,9 @@
             this.container
                 .addClass("daterangepicker")
                 .addClass("dropdown-menu");
-            $(template).appendTo(this.container);
         } else {
-            template = '<div class="daterangepicker dropdown-menu">' +
-                template +
-                '</div>';
             this.container = $(template).appendTo("body");
-        }
-
+        };
 
         this.setOptions(options, cb);
 
