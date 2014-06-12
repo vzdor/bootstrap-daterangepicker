@@ -10,28 +10,36 @@
 
     var DateRangePicker = function (element, options, cb) {
 
-        // by default, the daterangepicker element is placed at the bottom of HTML body
-        this.parentEl = 'body';
-
-        //element that triggered the date range picker
+        // element that triggered the date range picker
         this.element = $(element);
 
-        //create the picker HTML object
-        var DRPTemplate = '<div class="daterangepicker dropdown-menu">' +
+        // create the picker HTML object
+        var template =
                 '<div class="calendar left"></div>' +
-                '<div class="calendar right"></div>' +
-              '</div>';
+                '<div class="calendar right"></div>';
 
-        //custom options
+        // custom options
         if (typeof options !== 'object' || options === null)
             options = {};
 
-        this.parentEl = (typeof options === 'object' && options.parentEl && $(options.parentEl).length) ? $(options.parentEl) : $(this.parentEl);
-        this.container = $(DRPTemplate).appendTo(this.parentEl);
+        this.container = options.container;
+
+        if (this.container) {
+            this.container
+                .addClass("daterangepicker")
+                .addClass("dropdown-menu");
+            $(template).appendTo(this.container);
+        } else {
+            template = '<div class="daterangepicker dropdown-menu">' +
+                template +
+                '</div>';
+            this.container = $(template).appendTo("body");
+        }
+
 
         this.setOptions(options, cb);
 
-        //apply CSS classes and labels to buttons
+        // apply CSS classes and labels to buttons
         var c = this.container;
         $.each(this.buttonClasses, function (idx, val) {
             c.find('button').addClass(val);
@@ -265,41 +273,6 @@
                 }
             }
 
-            if (typeof options.ranges === 'object') {
-                for (range in options.ranges) {
-
-                    start = moment(options.ranges[range][0]);
-                    end = moment(options.ranges[range][1]);
-
-                    // If we have a min/max date set, bound this range
-                    // to it, but only if it would otherwise fall
-                    // outside of the min/max.
-                    if (this.minDate && start.isBefore(this.minDate))
-                        start = moment(this.minDate);
-
-                    if (this.maxDate && end.isAfter(this.maxDate))
-                        end = moment(this.maxDate);
-
-                    // If the end of the range is before the minimum (if min is set) OR
-                    // the start of the range is after the max (also if set) don't display this
-                    // range option.
-                    if ((this.minDate && end.isBefore(this.minDate)) || (this.maxDate && start.isAfter(this.maxDate))) {
-                        continue;
-                    }
-
-                    this.ranges[range] = [start, end];
-                }
-
-                var list = '<ul>';
-                for (range in this.ranges) {
-                    list += '<li>' + range + '</li>';
-                }
-                list += '<li>' + this.locale.customRangeLabel + '</li>';
-                list += '</ul>';
-                this.container.find('.ranges ul').remove();
-                this.container.find('.ranges').prepend(list);
-            }
-
             if (typeof callback === 'function') {
                 this.cb = callback;
             }
@@ -441,39 +414,21 @@
         },
 
         move: function () {
-            var parentOffset = { top: 0, left: 0 };
-            if (!this.parentEl.is('body')) {
-                parentOffset = {
-                    top: this.parentEl.offset().top - this.parentEl.scrollTop(),
-                    left: this.parentEl.offset().left - this.parentEl.scrollLeft()
-                };
-            }
+            eleOffset = this.element.offset();
+            containerOffset = {
+                top:  eleOffset.top + this.element.outerHeight() + 2,
+                left: eleOffset.left
+            };
 
-            if (this.opens == 'left') {
-                this.container.css({
-                    top: this.element.offset().top + this.element.outerHeight() - parentOffset.top,
-                    right: $(window).width() - this.element.offset().left - this.element.outerWidth() - parentOffset.left,
-                    left: 'auto'
-                });
-                if (this.container.offset().left < 0) {
-                    this.container.css({
-                        right: 'auto',
-                        left: 9
-                    });
-                }
-            } else {
-                this.container.css({
-                    top: this.element.offset().top + this.element.outerHeight() - parentOffset.top,
-                    left: this.element.offset().left - parentOffset.left,
-                    right: 'auto'
-                });
-                if (this.container.offset().left + this.container.outerWidth() > $(window).width()) {
-                    this.container.css({
-                        left: 'auto',
-                        right: 0
-                    });
-                }
-            }
+           if (containerOffset.left + this.container.outerWidth() > $(window).width()) {
+               delete containerOffset.left;
+               this.container
+                   .css({left: "auto",
+                         right: "0px"});
+           }
+
+            this.container
+                .offset(containerOffset);
         },
 
         toggle: function (e) {
@@ -829,36 +784,6 @@
             return calendar;
         },
 
-        renderDropdowns: function (selected, minDate, maxDate) {
-            var currentMonth = selected.month();
-            var monthHtml = '<select class="monthselect">';
-            var inMinYear = false;
-            var inMaxYear = false;
-
-            for (var m = 0; m < 12; m++) {
-                if ((!inMinYear || m >= minDate.month()) && (!inMaxYear || m <= maxDate.month())) {
-                    monthHtml += "<option value='" + m + "'" +
-                        (m === currentMonth ? " selected='selected'" : "") +
-                        ">" + this.locale.monthNames[m] + "</option>";
-                }
-            }
-            monthHtml += "</select>";
-
-            var currentYear = selected.year();
-            var maxYear = (maxDate && maxDate.year()) || (currentYear + 5);
-            var minYear = (minDate && minDate.year()) || (currentYear - 50);
-            var yearHtml = '<select class="yearselect">';
-
-            for (var y = minYear; y <= maxYear; y++) {
-                yearHtml += '<option value="' + y + '"' +
-                    (y === currentYear ? ' selected="selected"' : '') +
-                    '>' + y + '</option>';
-            }
-
-            yearHtml += '</select>';
-
-            return monthHtml + yearHtml;
-        },
 
         renderCalendar: function (calendar, selected, minDate, maxDate) {
 
@@ -878,10 +803,6 @@
             }
 
             var dateHtml = this.locale.monthNames[calendar[1][1].month()] + calendar[1][1].format(" YYYY");
-
-            if (this.showDropdowns) {
-                dateHtml = this.renderDropdowns(calendar[1][1], minDate, maxDate);
-            }
 
             html += '<th colspan="5" class="month">' + dateHtml + '</th>';
             if (!maxDate || maxDate.isAfter(calendar[1][1])) {
